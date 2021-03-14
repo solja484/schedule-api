@@ -1,0 +1,18 @@
+{
+  "name": "schedule-api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "build": "webpack",
+    "dev": "nodemon ./server.js localhost 3080"
+  },
+  "dependencies": {
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "morgan": "~1.9.1",
+    "mysql2": "^2.2.5",
+    "node-sass-middleware": "0.11.0",
+    "nodemon": "^2.0.7"
+  }
+}
