@@ -71,8 +71,8 @@ server.get('/api/schedule/:code', (req, res) => {
         "academic_year, season, schedule.level, study_year, title, subfaculty.name as subfaculty, " +
         "speciality.name as speciality, schedule.speciality_id, schedule.subfaculty_id FROM schedule " +
         "LEFT JOIN faculty ON schedule.faculty_id=faculty.id " +
-        "LEFT JOIN kma_data.subfaculty ON kma_data.subfaculty.id=kma_data.schedule.subfaculty_id " +
-        "LEFT JOIN kma_data.speciality ON kma_data.speciality.id=kma_data.schedule.speciality_id " +
+        "LEFT JOIN subfaculty ON subfaculty.id=schedule.subfaculty_id " +
+        "LEFT JOIN speciality ON speciality.id=schedule.speciality_id " +
         "WHERE code=? ", [req.params.code])
         .then(([results, fields]) =>
             connection.query("SELECT course_schedule.id, course_schedule.course_cdoc as course_code, " +
@@ -88,21 +88,21 @@ server.get('/api/schedule/:code', (req, res) => {
         .catch(err =>
             console.log(err));
 });
-server.get('/api/courses',(req, res) => {
-    if(req.query.speciality)
-    connection.query("SELECT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, " +
-        "season, exam_form FROM course_speciality " +
-        "LEFT JOIN course ON course.sub_cdoc=course_speciality.course_cdoc " +
-        "LEFT JOIN course_season ON course.sub_cdoc=course_season.course_cdoc " +
-        "WHERE course_speciality.speciality_id=? " +
-        "AND course.level=? AND course.status_happened='happened' " +
-        "AND course_season.season=? AND course.academic_year=?",
-        [req.query.speciality, req.query.level, req.query.season, req.query.academic_year])
-        .then(([results, fields]) => {
-            console.log(results);
-            res.json(results);
-        }).catch(err =>
-        console.log(err));
+server.get('/api/courses', (req, res) => {
+    if (req.query.speciality)
+        connection.query("SELECT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, " +
+            "season, exam_form FROM course_speciality " +
+            "LEFT JOIN course ON course.sub_cdoc=course_speciality.course_cdoc " +
+            "LEFT JOIN course_season ON course.sub_cdoc=course_season.course_cdoc " +
+            "WHERE course_speciality.speciality_id=? " +
+            "AND course.level=? AND course.status_happened='happened' " +
+            "AND course_season.season=? AND course.academic_year=?",
+            [req.query.speciality, req.query.level, req.query.season, req.query.academic_year])
+            .then(([results, fields]) => {
+                console.log(results);
+                res.json(results);
+            }).catch(err =>
+            console.log(err));
     else
         connection.query("SELECT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, " +
             "season, exam_form FROM course_speciality " +
@@ -120,6 +120,17 @@ server.get('/api/courses',(req, res) => {
             console.log(err));
 });
 
+server.get('/api/schedule_new_code', (req, res) => {
+    console.log("generated schedule code");
+    connection.query("SELECT MAX(code) as code FROM schedule ")
+        .then(([results, fields]) => {
+            console.log("generated schedule code");
+            const new_code = results[0].code + 1;
+            res.json(new_code)
+        })
+        .catch(err =>
+            console.log(err));
+});
 
 server.post('/api/login', (req, res) => {
     connection.query("SELECT id, link, role, code, name " +
@@ -187,6 +198,18 @@ server.get('/api/user/:usercode/courses', (req, res) => {
                     res.json({"course_data": results, "course_schedule": results2}))
                 .catch(err =>
                     console.log(err)))
+        .catch(err =>
+            console.log(err));
+});
+
+
+server.post('/api/schedule_draft', (req, res) => {
+    console.log(req);
+    connection.query("UPDATE schedule SET draft=? WHERE id=?", [req.body.draft, req.body.id])
+        .then(([results, fields]) => {
+            console.log(results);
+            res.json({success:"yes"});
+        })
         .catch(err =>
             console.log(err));
 });
