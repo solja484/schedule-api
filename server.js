@@ -203,11 +203,18 @@ server.get('/api/user/:usercode/courses', (req, res) => {
 });
 
 
-server.post('/api/schedule_draft', (req, res) => {
-    console.log(req);
+server.post('/api/schedule/draft', (req, res) => {
     connection.query("UPDATE schedule SET draft=? WHERE id=?", [req.body.draft, req.body.id])
         .then(([results, fields]) => {
-            console.log(results);
+            res.json({success:"yes"});
+        })
+        .catch(err =>
+            console.log(err));
+});
+
+server.post('/api/schedule/delete', (req, res) => {
+    connection.query("DELETE FROM schedule WHERE code=?", [req.body.code])
+        .then(([results, fields]) => {
             res.json({success:"yes"});
         })
         .catch(err =>
