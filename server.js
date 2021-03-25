@@ -41,7 +41,7 @@ server.get('/api/sub_faculty', (req, res) => {
 });
 server.get('/api/speciality', (req, res) => {
     connection.query("SELECT DISTINCT name, id, faculty_id, level " +
-        "FROM speciality ORDER BY speciality.level")
+        "FROM speciality ORDER BY faculty_id")
         .then(([results, fields]) =>
             res.json(results))
         .catch(err =>
@@ -176,37 +176,59 @@ server.get('/api/pairs', (req, res) => {
         console.log(err));
 });
 
-server.get('/api/user/:usercode/courses', (req, res) => {
+server.get('/api/user/courses', (req, res) => {
     connection.query("SELECT course_cdoc as code, season, course.name, " +
         "academic_year, year, hours,credits, level,teacher, status_happened, reg_type " +
         "FROM kma_data.course_season " +
         "INNER JOIN course ON course_season.course_cdoc=course.sub_cdoc " +
         "INNER JOIN course_register ON course_season.course_cdoc=course_register.sub_code " +
         "WHERE course_season.season='2' AND academic_year='2020' AND " +
-        "course_register.user_code='204186'AND course_register.deleted='0';")
+        "course_register.user_code=? AND course_register.deleted='0';", [req.query.code])
         .then(([results, fields]) =>
             connection.query("SELECT course_schedule.id as id, course_cdoc, course_schedule.group, " +
-                "pair_id, day_id, weeks, classroom.number FROM course_schedule " +
+                "pair_id, day_id, weeks, classroom.number as room, course.name as name, course.teacher as teacher, " +
+                "course.chair_id as subfaculty " +
+                "FROM course_schedule " +
                 "LEFT JOIN classroom ON course_schedule.classroom = classroom.id " +
-                "WHERE course_cdoc IN " +
+                "LEFT JOIN course ON course.sub_cdoc=course_schedule.course_cdoc " +
+                "WHERE course_schedule.exam_type IS NULL AND course_schedule.course_cdoc IN " +
                 "(SELECT course_cdoc FROM course_season " +
                 "INNER JOIN course ON course_season.course_cdoc=course.sub_cdoc " +
-                "WHERE course_season.season='2' AND academic_year='2020' AND status_happened='happened' " +
+                "WHERE course_season.season='2' AND academic_year='2020' " +
                 "AND course_cdoc IN " +
-                "(SELECT sub_code FROM kma_data.course_register WHERE user_code='204186'AND deleted='0'));")
-                .then(([results2, fields2]) =>
-                    res.json({"course_data": results, "course_schedule": results2}))
+                "(SELECT sub_code FROM kma_data.course_register WHERE user_code=? AND deleted='0'));", [req.query.code])
+                .then(([results2, fields2]) => {
+                    res.json({"course_data": results, "course_schedule": results2})
+                })
                 .catch(err =>
                     console.log(err)))
         .catch(err =>
             console.log(err));
 });
 
+server.get('/api/user/session', (req, res) => {
+    connection.query("SELECT course_schedule.id as id, course_cdoc, course_schedule.group, " +
+        "pair_id, day_id, weeks, classroom.number as room, course.name as name, course.teacher as teacher " +
+        "FROM course_schedule " +
+        "LEFT JOIN classroom ON course_schedule.classroom = classroom.id " +
+        "LEFT JOIN course ON course.sub_cdoc=course_schedule.course_cdoc " +
+        "WHERE course_schedule.exam_type IS NOT NULL AND course_schedule.course_cdoc IN " +
+        "(SELECT course_cdoc FROM course_season " +
+        "INNER JOIN course ON course_season.course_cdoc=course.sub_cdoc " +
+        "WHERE course_season.season='2' AND academic_year='2020' " +
+        "AND course_cdoc IN " +
+        "(SELECT sub_code FROM kma_data.course_register WHERE user_code=? AND deleted='0'));", [req.query.code])
+        .then(([results, fields]) => {
+            res.json(results);
+        })
+        .catch(err =>
+            console.log(err))
+});
 
 server.post('/api/schedule/draft', (req, res) => {
     connection.query("UPDATE schedule SET draft=? WHERE id=?", [req.body.draft, req.body.id])
         .then(([results, fields]) => {
-            res.json({success:"yes"});
+            res.json({success: "yes"});
         })
         .catch(err =>
             console.log(err));
@@ -215,7 +237,55 @@ server.post('/api/schedule/draft', (req, res) => {
 server.post('/api/schedule/delete', (req, res) => {
     connection.query("DELETE FROM schedule WHERE code=?", [req.body.code])
         .then(([results, fields]) => {
-            res.json({success:"yes"});
+            res.json({success: "yes"});
+        })
+        .catch(err =>
+            console.log(err));
+});
+
+/*
+* UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+WHERE condition;*/
+
+server.post('/api/schedule/edit', (req, res) => {
+    connection.query("UPDATE schedule SET speciality_id=?, subfaculty_id=?, study_year=?, season=?, " +
+        "academic_year=?, title=?, level=? " +
+        "WHERE code=?", [
+        req.body.selected_speciality,
+        req.body.selected_sub_faculty,
+        req.body.selected_study_year,
+        req.body.selected_season,
+        req.body.selected_academic_year,
+        req.body.selected_name,
+        req.body.selected_level,
+        req.body.schedule_code])
+        .then(([results, fields]) => {
+            res.json(results);
+        })
+        .catch(err =>
+            console.log(err));
+});
+
+server.post('/api/schedule/create', (req, res) => {
+    console.log(req);
+    connection.query("INSERT INTO schedule (code, schedule_type, faculty_id,speciality_id, subfaculty_id, " +
+        "study_year, season, academic_year, title, level, draft) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)", [
+        req.body.schedule_code,
+        req.body.schedule_type,
+        req.body.selected_faculty,
+        req.body.selected_speciality,
+        req.body.selected_sub_faculty,
+        req.body.selected_study_year,
+        req.body.selected_season,
+        req.body.selected_academic_year,
+        req.body.selected_name,
+        req.body.selected_level]
+     )
+        .then(([results, fields]) => {
+            console.log(results);
+            res.json(results);
         })
         .catch(err =>
             console.log(err));
