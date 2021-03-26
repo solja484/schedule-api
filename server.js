@@ -76,11 +76,10 @@ server.get('/api/schedule/:code', (req, res) => {
         "WHERE code=? ", [req.params.code])
         .then(([results, fields]) =>
             connection.query("SELECT course_schedule.id, course_schedule.course_cdoc as course_code, " +
-                "course_schedule.group, day_id, pair_id, weeks, classroom.number as classroom, " +
-                "course.name as name, course.teacher as teacher, exam_type FROM course_schedule " +
+                "course_schedule.group, day_id, pair_id, weeks, classroom, " +
+                "course.name as name, course_schedule.teacher as teacher, exam_type FROM course_schedule " +
                 "LEFT JOIN course_season ON course_schedule.course_cdoc=course_season.course_cdoc " +
                 "LEFT JOIN course ON course.sub_cdoc=course_schedule.course_cdoc " +
-                "LEFT JOIN classroom ON course_schedule.classroom=classroom.id " +
                 "WHERE schedule_code=? ORDER BY day_id", [req.params.code]).then(([results2, fields2]) =>
                 res.json({"schedule": results[0], "courses": results2}))
                 .catch(err =>
@@ -178,7 +177,7 @@ server.get('/api/pairs', (req, res) => {
 
 server.get('/api/user/courses', (req, res) => {
     connection.query("SELECT course_cdoc as code, season, course.name, " +
-        "academic_year, year, hours,credits, level,teacher, status_happened, reg_type " +
+        "academic_year, year, hours,credits, level, teacher, status_happened, reg_type " +
         "FROM kma_data.course_season " +
         "INNER JOIN course ON course_season.course_cdoc=course.sub_cdoc " +
         "INNER JOIN course_register ON course_season.course_cdoc=course_register.sub_code " +
@@ -186,10 +185,9 @@ server.get('/api/user/courses', (req, res) => {
         "course_register.user_code=? AND course_register.deleted='0';", [req.query.code])
         .then(([results, fields]) =>
             connection.query("SELECT course_schedule.id as id, course_cdoc, course_schedule.group, " +
-                "pair_id, day_id, weeks, classroom.number as room, course.name as name, course.teacher as teacher, " +
+                "pair_id, day_id, weeks, classroom as room, course.name as name, course_schedule.teacher as teacher, " +
                 "course.chair_id as subfaculty " +
                 "FROM course_schedule " +
-                "LEFT JOIN classroom ON course_schedule.classroom = classroom.id " +
                 "LEFT JOIN course ON course.sub_cdoc=course_schedule.course_cdoc " +
                 "WHERE course_schedule.exam_type IS NULL AND course_schedule.course_cdoc IN " +
                 "(SELECT course_cdoc FROM course_season " +
@@ -208,9 +206,8 @@ server.get('/api/user/courses', (req, res) => {
 
 server.get('/api/user/session', (req, res) => {
     connection.query("SELECT course_schedule.id as id, course_cdoc, course_schedule.group, " +
-        "pair_id, day_id, weeks, classroom.number as room, course.name as name, course.teacher as teacher " +
+        "pair_id, day_id, weeks, classroom as room, course.name as name, course_schedule.teacher as teacher " +
         "FROM course_schedule " +
-        "LEFT JOIN classroom ON course_schedule.classroom = classroom.id " +
         "LEFT JOIN course ON course.sub_cdoc=course_schedule.course_cdoc " +
         "WHERE course_schedule.exam_type IS NOT NULL AND course_schedule.course_cdoc IN " +
         "(SELECT course_cdoc FROM course_season " +
@@ -243,12 +240,9 @@ server.post('/api/schedule/delete', (req, res) => {
             console.log(err));
 });
 
-/*
-* UPDATE table_name
-SET column1 = value1, column2 = value2, ...
-WHERE condition;*/
-
 server.post('/api/schedule/edit', (req, res) => {
+    const code=req.body.schedule_code;
+    console.log("Trying to edit schedule "+code);
     connection.query("UPDATE schedule SET speciality_id=?, subfaculty_id=?, study_year=?, season=?, " +
         "academic_year=?, title=?, level=? " +
         "WHERE code=?", [
@@ -259,13 +253,29 @@ server.post('/api/schedule/edit', (req, res) => {
         req.body.selected_academic_year,
         req.body.selected_name,
         req.body.selected_level,
-        req.body.schedule_code])
+        code])
         .then(([results, fields]) => {
-            res.json(results);
+            console.log("Trying to edit schedule courses");
+            connection.query("DELETE FROM course_schedule WHERE schedule_code=?", [code])
+                .then(([results2, fields2]) => {
+                    console.log(req.body.editTable);
+                    insertRows(req.body.editTable, code);
+                    res.json(results);
+                });
         })
         .catch(err =>
-            console.log(err));
+            console.log(err))
+        .finally();
 });
+
+function insertRows(table, code) {
+    for (let row of table) {
+        connection.query("INSERT INTO course_schedule (schedule_code, course_cdoc, course_schedule.group, day_id, " +
+            "pair_id, weeks, classroom, exam_type, teacher) " +
+            "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", [code, row.course_code, row.group, row.day_id, row.pair_id, row.weeks,
+            row.classroom, row.exam_type, row.teacher]);
+    }
+}
 
 server.post('/api/schedule/create', (req, res) => {
     console.log(req);
@@ -281,10 +291,9 @@ server.post('/api/schedule/create', (req, res) => {
         req.body.selected_season,
         req.body.selected_academic_year,
         req.body.selected_name,
-        req.body.selected_level]
-     )
+        req.body.selected_level])
         .then(([results, fields]) => {
-            console.log(results);
+            insertRows(req.body.editTable, req.body.schedule_code);
             res.json(results);
         })
         .catch(err =>
