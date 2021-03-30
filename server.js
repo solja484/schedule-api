@@ -160,21 +160,6 @@ server.post('/api/login', (req, res) => {
         console.log(err));
 });
 
-server.get('/api/days', (req, res) => {
-    connection.query("SELECT * FROM working_days ORDER BY number")
-        .then(([results, _]) =>
-            res.json(results))
-        .catch(err =>
-            console.log(err));
-});
-
-server.get('/api/pairs', (req, res) => {
-    connection.query("SELECT * FROM pairs ORDER BY number")
-        .then(([results, _]) =>
-            res.json(results)).catch(err =>
-        console.log(err));
-});
-
 server.get('/api/user/courses', (req, res) => {
     connection.query("SELECT course_cdoc as code, season, course.name, " +
         "academic_year, year, hours,credits, level, teacher, status_happened, reg_type " +
