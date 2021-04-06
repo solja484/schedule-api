@@ -26,8 +26,8 @@ async function deleteSchedule(code) {
 async function editSchedule(req) {
     await deleteRows(req);
     const schedule = await db.query(`UPDATE schedule SET speciality_id=?, subfaculty_id=?, study_year=?, season=?, 
-        "academic_year=?, title=?, level=? 
-        "WHERE code=?`,
+        academic_year=?, title=?, level=? 
+        WHERE code=?`,
         [
             req.selected_speciality,
             req.selected_sub_faculty,
@@ -47,8 +47,8 @@ async function deleteRows(req) {
 
 async function createSchedule(req) {
     const schedule = await db.query(`INSERT INTO schedule (code, schedule_type, faculty_id,speciality_id, subfaculty_id, 
-        "study_year, season, academic_year, title, level, draft) 
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        study_year, season, academic_year, title, level, draft) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         [
             req.schedule_code,
             req.schedule_type,
@@ -70,7 +70,8 @@ async function setDraftMode(id, draft) {
 }
 
 async function generateNewCode() {
-    return await db.query(`SELECT MAX(code) as code FROM schedule`)[0] + 1;
+    const code=await db.query(`SELECT MAX(code) as code FROM schedule`);
+    return code[0].code+1;
 }
 
 async function insertRows(table, code) {

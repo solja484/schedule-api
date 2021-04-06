@@ -1,13 +1,19 @@
 const db = require('./db');
 
 async function getUser(req) {
-    let user = await db.query(
+    const users = await db.query(
         `SELECT id, link, role, code, name FROM _user WHERE login=? AND password=?`,
         [req.login, req.password]);
-    if (user[0].role == 'metodist_dec')
-        user[0].methodist = await getMethodistDetails(user[0]);
-    else if (user[0].role == 'student')
-        user[0].student = await getStudentDetails(user[0]);
+    let user=users[0];
+    if (user.role == 'metodist_dec'){
+        const details = await getMethodistDetails(user);
+        user['methodist'] = details[0];
+    }
+    if (user.role == 'student'){
+        const details=await getStudentDetails(user);
+        user['student'] = details[0];
+    }
+
     return user;
 }
 
@@ -18,11 +24,11 @@ async function getStudentDetails(student) {
         INNER JOIN speciality ON student.spec_id=speciality.id 
         INNER JOIN faculty ON speciality.faculty_id=faculty.id 
         WHERE student.id=?`,
-        [student.link])[0];
+        [student.link]);
 }
 
 async function getMethodistDetails(methodist) {
-    return await db.query(`SELECT faculty_id, faculty_name FROM _metodist WHERE id=?`, [methodist.link])[0];
+    return await db.query(`SELECT faculty_id, faculty_name FROM _metodist WHERE id=?`, [methodist.link]);
 }
 
 async function getUserCourses(req) {
@@ -34,7 +40,7 @@ async function getUserCourses(req) {
             INNER JOIN course_register ON course_season.course_cdoc=course_register.sub_code 
             WHERE course_season.season='2' AND academic_year='2020' AND 
             course_register.user_code=? AND course_register.deleted='0'`,
-        [req.code]);
+        [req]);
     const schedule = await db.query(
         `SELECT course_schedule.id as id, course_cdoc, course_schedule.group, 
                 pair_id, day_id, weeks, classroom as room, course.name as name, course_schedule.teacher as teacher, 
@@ -47,12 +53,12 @@ async function getUserCourses(req) {
                 WHERE course_season.season='2' AND academic_year='2020' 
                 AND course_cdoc IN 
                 (SELECT sub_code FROM kma_data.course_register WHERE user_code=? AND deleted='0'));`,
-        [req.code]);
+        [req]);
     return {"course_data": data, "course_schedule": schedule}
 }
 
 async function getUserSession(req) {
-    const res = await db.query(
+    return await db.query(
         `SELECT course_schedule.id as id, course_cdoc, course_schedule.group, 
             pair_id, day_id, weeks, classroom as room, course.name as name, course_schedule.teacher as teacher 
             FROM course_schedule 
@@ -63,8 +69,7 @@ async function getUserSession(req) {
             WHERE course_season.season='2' AND academic_year='2020' 
             AND course_cdoc IN 
             (SELECT sub_code FROM kma_data.course_register WHERE user_code=? AND deleted='0'))`,
-        [req.code]);
-    return res;
+        [req]);
 }
 
 module.exports = {

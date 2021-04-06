@@ -45,6 +45,7 @@ router.get('/university/courses', async function (req, res, next) {
     }
 });
 
+
 router.get('/schedules/all', async function (req, res, next) {
     try {
         res.json(await schedules.getAllList(req.query));
@@ -62,7 +63,6 @@ router.get('/schedules/methodist', async function (req, res, next) {
         next(err);
     }
 });
-
 
 router.post('/schedule/delete', async function (req, res, next) {
     try {
@@ -118,6 +118,7 @@ router.post('/schedule/draft', async function (req, res, next) {
     }
 });
 
+
 router.post('/user/login', async function (req, res, next) {
     try {
         res.json(await user.getUser(req.body));
@@ -135,6 +136,7 @@ router.get('/user/courses', async function (req, res, next) {
         next(err);
     }
 });
+
 router.get('/user/session', async function (req, res, next) {
     try {
         res.json(await user.getUserSession(req.query.code));

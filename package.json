@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node ./bin/www",
     "build": "webpack",
-    "dev": "nodemon ./server.js localhost 3080"
+    "dev": "nodemon ./server.js localhost 3080",
+    "test": "jest"
   },
   "dependencies": {
     "debug": "~2.6.9",
@@ -13,6 +14,10 @@
     "morgan": "~1.9.1",
     "mysql2": "^2.2.5",
     "node-sass-middleware": "0.11.0",
-    "nodemon": "^2.0.7"
+    "nodemon": "^2.0.7",
+    "supertest": "^4.0.2"
+  },
+  "devDependencies": {
+    "jest": "^26.4.2"
   }
 }
