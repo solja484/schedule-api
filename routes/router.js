@@ -35,7 +35,8 @@ router.get('/university/speciality', async function (req, res, next) {
 
 router.get('/university/courses', async function (req, res, next) {
     try {
-        if (req.query.speciality)
+
+        if (req.query.speciality!==undefined)
             res.json(await university.getSpecialityCourses(req.query));
         else
             res.json(await university.getFacultyCourses(req.query));

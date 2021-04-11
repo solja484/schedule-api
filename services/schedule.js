@@ -2,7 +2,7 @@ const db = require('./db');
 
 
 async function getSchedule(code) {
-    const schedule = await db.query(`SELECT schedule.id,schedule.code,schedule.faculty_id, faculty.name as faculty, 
+    const schedule = await db.query(`SELECT DISTINCT schedule.id,schedule.code,schedule.faculty_id, faculty.name as faculty, 
         schedule_type, academic_year, season, schedule.level, study_year, title, subfaculty.name as subfaculty, 
         speciality.name as speciality, schedule.speciality_id, schedule.subfaculty_id 
         FROM schedule 
@@ -10,10 +10,10 @@ async function getSchedule(code) {
         LEFT JOIN subfaculty ON subfaculty.id=schedule.subfaculty_id 
         LEFT JOIN speciality ON speciality.id=schedule.speciality_id 
         WHERE code=? `, [code]);
-    const courses = await db.query(`SELECT course_schedule.id, course_schedule.course_cdoc as course_code, 
+    const courses = await db.query(`SELECT DISTINCT course_schedule.id, course_schedule.course_cdoc as course_code, 
         course_schedule.group, day_id, pair_id, weeks, classroom, 
-        course.name as name, course_schedule.teacher as teacher, exam_type FROM course_schedule 
-        LEFT JOIN course_season ON course_schedule.course_cdoc=course_season.course_cdoc 
+        course.name as name, course_schedule.teacher as teacher, exam_type, actual_group  
+        FROM course_schedule 
         LEFT JOIN course ON course.sub_cdoc=course_schedule.course_cdoc 
         WHERE schedule_code=? ORDER BY day_id`, [code]);
     return {"schedule": schedule[0], "courses": courses}
@@ -24,6 +24,8 @@ async function deleteSchedule(code) {
 }
 
 async function editSchedule(req) {
+    console.log("EDIT REQUEST INFO");
+    console.log(req);
     await deleteRows(req);
     const schedule = await db.query(`UPDATE schedule SET speciality_id=?, subfaculty_id=?, study_year=?, season=?, 
         academic_year=?, title=?, level=? 
@@ -46,6 +48,8 @@ async function deleteRows(req) {
 }
 
 async function createSchedule(req) {
+    console.log("CREATE REQUEST INFO");
+    console.log(req);
     const schedule = await db.query(`INSERT INTO schedule (code, schedule_type, faculty_id,speciality_id, subfaculty_id, 
         study_year, season, academic_year, title, level, draft) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
@@ -70,8 +74,8 @@ async function setDraftMode(id, draft) {
 }
 
 async function generateNewCode() {
-    const code=await db.query(`SELECT MAX(code) as code FROM schedule`);
-    return code[0].code+1;
+    const code = await db.query(`SELECT MAX(code) as code FROM schedule`);
+    return code[0].code + 1;
 }
 
 async function insertRows(table, code) {

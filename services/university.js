@@ -14,8 +14,10 @@ async function getSpeciality() {
 }
 
 async function getSpecialityCourses(req) {
+    console.log("SPECIALITY COURSES");
+    console.log(req);
     return await db.query(
-        `SELECT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, 
+        `SELECT DISTINCT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, 
             season, exam_form FROM course_speciality 
             LEFT JOIN course ON course.sub_cdoc=course_speciality.course_cdoc 
             LEFT JOIN course_season ON course.sub_cdoc=course_season.course_cdoc 
@@ -27,15 +29,17 @@ async function getSpecialityCourses(req) {
 }
 
 async function getFacultyCourses(req) {
+    console.log("FACULTY COURSES");
+    console.log(req);
     return await db.query(
-        `SELECT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, 
+        `SELECT DISTINCT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, 
             season, exam_form FROM course_speciality 
             LEFT JOIN course ON course.sub_cdoc=course_speciality.course_cdoc 
             LEFT JOIN course_season ON course.sub_cdoc=course_season.course_cdoc 
             WHERE course.level=? AND course.status_happened=? 
             AND course_season.season=? AND course.academic_year=? 
-            AND course_speciality.speciality_id IN 
-            (SELECT id FROM speciality WHERE faculty_id=?)`,
+            AND course.chair_id IN 
+            (SELECT id FROM subfaculty WHERE faculty_id=?)`,
         [req.level, 'happened', req.season, req.academic_year, req.faculty]);
 }
 
