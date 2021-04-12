@@ -1,6 +1,5 @@
 const db = require('./db');
 
-
 async function getFaculties() {
     return await db.query("SELECT * FROM faculty");
 }
@@ -14,8 +13,6 @@ async function getSpeciality() {
 }
 
 async function getSpecialityCourses(req) {
-    console.log("SPECIALITY COURSES");
-    console.log(req);
     return await db.query(
         `SELECT DISTINCT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, 
             season, exam_form FROM course_speciality 
@@ -29,8 +26,6 @@ async function getSpecialityCourses(req) {
 }
 
 async function getFacultyCourses(req) {
-    console.log("FACULTY COURSES");
-    console.log(req);
     return await db.query(
         `SELECT DISTINCT course.id as id, sub_cdoc as course_code, course.name as name, actual_group, 
             season, exam_form FROM course_speciality 

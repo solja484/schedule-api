@@ -13,7 +13,6 @@ async function getUser(req) {
         const details = await getStudentDetails(user);
         user['student'] = details[0];
     }
-
     return user;
 }
 

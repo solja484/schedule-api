@@ -15,20 +15,20 @@ router.get('/university/faculty', async function (req, res, next) {
     }
 });
 
-router.get('/university/sub_faculty', async function (req, res, next) {
-    try {
-        res.json(await university.getSubFaculties());
-    } catch (err) {
-        console.error(`Error while getting sub-faculties`, err.message);
-        next(err);
-    }
-});
-
 router.get('/university/speciality', async function (req, res, next) {
     try {
         res.json(await university.getSpeciality());
     } catch (err) {
         console.error(`Error while getting specialities`, err.message);
+        next(err);
+    }
+});
+
+router.get('/university/sub_faculty', async function (req, res, next) {
+    try {
+        res.json(await university.getSubFaculties());
+    } catch (err) {
+        console.error(`Error while getting sub-faculties`, err.message);
         next(err);
     }
 });
